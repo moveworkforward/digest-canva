@@ -1,0 +1,31 @@
+{
+  "name": "digest-canva",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "deploy": ". ./.env.$npm_config_stage && ts-node scripts/deploy.ts --application=$npm_config_application --func=$npm_config_func"
+  },
+  "author": "Move Work Forward",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/shelljs": "^0.8.15",
+    "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.16.0",
+    "@typescript-eslint/parser": "^7.16.0",
+    "commander": "^12.1.0",
+    "eslint": "^8.57.0",
+    "handlebars": "^4.7.8",
+    "serverless-deployment-bucket": "^1.6.0",
+    "serverless-domain-manager": "^7.3.8",
+    "serverless-dynamodb-stream-arn-plugin": "^0.0.7",
+    "serverless-esbuild": "^1.52.1",
+    "serverless-s3-sync": "^3.3.0",
+    "shelljs": "^0.8.5",
+    "ts-node": "^10.9.2",
+    "uuid": "^10.0.0"
+  },
+  "dependencies": {
+    "dynamoose": "^4.0.1"
+  }
+}

@@ -1,0 +1,10 @@
+{
+    "extends": ".eslintrc.autofix-rules.json",
+    "rules": {
+        "no-mixed-spaces-and-tabs": "error",
+        "eqeqeq": "error",
+        "brace-style": "off",
+        "import/no-anonymous-default-export": "off",
+        "no-case-declarations": "warn"
+    }
+}

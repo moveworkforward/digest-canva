@@ -1,0 +1,119 @@
+{
+    "extends": [
+        "eslint:recommended",
+        ".eslintrc.base.json"
+    ],
+    "env": {
+        "node": true,
+        "es6": true,
+        "mocha": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 9,
+        "sourceType": "script"
+    },
+    "root": true,
+    "rules": {
+        "array-type": "off",
+        "trailing-comma": "off",
+        "no-trailing-whitespace": "off",
+        "object-literal-sort-keys": "off",
+        "object-literal-key-quotes": "off",
+        "no-default-export": "off",
+        "no-var-requires": "off",
+        "variable-name": "off",
+        "interface-name": "off",
+        "max-line-length": "off",
+        "curly": "off",
+        "no-console": "off",
+        "no-consecutive-blank-lines": "off",
+        "interface-over-type-literal": "off",
+        "no-namespace": "off",
+        "ordered-imports": "off",
+        "prefer-rest-params": "warn",
+        "no-extra-boolean-cast": "warn"
+    },
+    "overrides": [
+        {
+            "files": ["**/*.ts", "**/*.tsx"],
+            "extends": [
+                "plugin:@typescript-eslint/recommended",
+                ".eslintrc.ts.json"
+            ],
+            "parser": "@typescript-eslint/parser",
+            "plugins": ["@typescript-eslint"],
+            "rules": {
+                "@typescript-eslint/no-explicit-any": ["warn", { "ignoreRestArgs": true, "fixToUnknown": false }],
+                "@typescript-eslint/naming-convention": [
+                  "error",
+                  {
+                    "selector": "default",
+                    "format": ["camelCase"],
+                    "leadingUnderscore": "forbid",
+                    "trailingUnderscore": "forbid"
+                  },
+                  {
+                    "selector": "variable",
+                    "modifiers": ["global", "const"],
+                    "format": ["camelCase", "UPPER_CASE", "PascalCase"]
+                  },
+                  {
+                    "selector": "function",
+                    "format": ["camelCase"]
+                  },
+                  {
+                    "selector": "property",
+                    "modifiers": ["private"],
+                    "leadingUnderscore": "require",
+                    "format": ["camelCase"]
+                  },
+                  {
+                    "selector": "parameter",
+                    "leadingUnderscore": "allow",
+                    "format": ["camelCase"]
+                  },
+                  {
+                    "selector": "parameterProperty",
+                    "modifiers": ["private"],
+                    "leadingUnderscore": "require",
+                    "format": ["camelCase"]
+                  },
+                  {
+                    "selector": "class",
+                    "modifiers": ["abstract"],
+                    "prefix": ["Abstract"],
+                    "format": ["PascalCase"]
+                  },
+                  {
+                    "selector": "class",
+                    "format": ["PascalCase"]
+                  },
+                  {
+                    "selector": "enum",
+                    "format": ["PascalCase"]
+                  },
+                  {
+                    "selector": "interface",
+                    "format": ["PascalCase"]
+                  },
+                  {
+                    "selector": "typeParameter",
+                    "format": ["camelCase", "PascalCase"]
+                  },
+                  {
+                    "selector": "typeAlias",
+                    "format": ["PascalCase"]
+                  },
+                  {
+                    "selector": "enumMember",
+                    "format": ["PascalCase"]
+                  },
+                  {
+                    "selector": "objectLiteralProperty",
+                    "format": null
+                  }
+                ]
+            }
+        }
+    ]
+}

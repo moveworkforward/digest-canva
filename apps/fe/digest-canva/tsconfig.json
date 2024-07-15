@@ -1,0 +1,48 @@
+{
+  "extends": "./tsbaseconfig.json",
+  "compilerOptions": {
+    "allowJs": false,
+    "alwaysStrict": true,
+    "jsx": "react-jsx",
+    "lib": [
+      "es2017",
+      "es6",
+      "dom"
+    ],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "outDir": "dist",
+    "rootDirs": [
+      "."
+    ],
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "skipLibCheck": true,
+    "target": "es5",
+    "baseUrl": ".",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage"
+  ],
+  "traceResolution": true,
+  "types": [
+    "@types"
+  ],
+  "include": [
+    "src"
+  ]
+}
