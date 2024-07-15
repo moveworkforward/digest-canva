@@ -1,0 +1,10 @@
+node_modules
+
+apps/be/*/shared
+apps/fe/*/shared
+apps/infra/*/shared
+
+.env*
+!.env.template
+
+.DS_Store

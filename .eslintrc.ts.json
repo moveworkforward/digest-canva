@@ -1,0 +1,10 @@
+{
+    "rules": {
+        "@typescript-eslint/no-unused-vars": "warn",
+        "@typescript-eslint/ban-ts-comment": "off",
+        "@typescript-eslint/no-empty-function": "off",
+        "prefer-rest-params": "warn",
+        "no-extra-boolean-cast": "warn",
+        "@typescript-eslint/no-inferrable-types": "warn"
+    }
+}

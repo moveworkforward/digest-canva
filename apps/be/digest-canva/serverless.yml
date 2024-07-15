@@ -1,0 +1,298 @@
+service: digest-canva
+
+frameworkVersion: "3"
+
+plugins:
+  - serverless-deployment-bucket
+  - serverless-esbuild
+  - serverless-domain-manager
+  - serverless-dynamodb-stream-arn-plugin
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${env:STAGE}
+  region: ${env:REGION}
+  profile: ${env:AWS_PROFILE}
+  memorySize: 512
+  timeout: 10
+  logRetentionInDays: 7
+  deploymentBucket:
+    name: net.${self:service}.${self:provider.region}.${aws:accountId}.deploys
+  versionFunctions: false
+  environment:
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    AWS_ACCOUNT_ID: ${aws:accountId}
+    DOMAIN: ${env:DOMAIN}
+    EMAIL_API_KEY: ${env:EMAIL_API_KEY}
+    SMTP_FROM_EMAIL: ${env:SMTP_FROM_EMAIL}
+    CANVA_CLIENT_ID: ${env:CANVA_CLIENT_ID}
+    CANVA_CLIENT_SECRET: ${env:CANVA_CLIENT_SECRET}
+    CANVA_APP_ID: ${env:CANVA_APP_ID}
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    NODE_OPTIONS: "--enable-source-maps"
+  stackTags:
+    SERVICE: "${self:service}"
+    REGION: "${self:provider.region}"
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:DescribeTable
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchGetItem
+            - dynamodb:BatchWriteItem
+          Resource: "arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/${self:provider.stage}_digest_canva_*"
+        - Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+            - lambda:InvokeAsync
+          Resource: "arn:aws:lambda:${self:provider.region}:${aws:accountId}:function:${self:provider.stage}-digest-canva-*"
+        - Effect: Allow
+          Action:
+            - kms:Decrypt
+            - kms:Encrypt
+            - kms:GenerateDataKey
+          Resource: "arn:aws:kms:${self:provider.region}:${aws:accountId}:key/*"
+        - Effect: Allow
+          Action:
+            - sqs:DeleteMessage
+            - sqs:ReceiveMessage
+            - sqs:SendMessage
+          Resource: "arn:aws:sqs:${self:provider.region}:${aws:accountId}:${self:provider.stage}*"
+custom:
+  deploymentBucket:
+    blockPublicAccess: true
+  customDomain:
+    autoDomain: true
+    domainName: api.${self:provider.environment.DOMAIN}
+    basePath: "digest-canva" # product
+    stage: ${self:provider.stage}
+    certificateName: "*.${self:provider.environment.DOMAIN}"
+    createRoute53Record: true
+  esbuild:
+    minify: true
+    sourcemap: external
+    sourcesContent: true
+    keepNames: true
+    keepOutputDirectory: true
+    write: false
+    plugins: ../esbuild.plugins.cjs
+    exclude:
+      - "@aws-sdk/*"
+      - "@smitty/*"
+      - "aws-sdk"
+
+package:
+  individually: true
+  patterns:
+    - "./shared/config/**"
+    - "./locales/**"
+    - '!node_modules/aws-sdk/**'
+    - '!node_modules/@aws-sdk/**'
+    - '!node_modules/typescript/**'
+    - '!node_modules/@smithy/**'
+    - '!node_modules/@types/**'
+
+functions:
+  # api
+  digestCanvaWebhook:
+    name: ${self:provider.stage}-${self:service}-webhook
+    handler: api/webhook/index.handler
+    description: Webhook digest
+    memorySize: 256
+    events:
+      - http:
+          path: /webhook
+          method: post
+          cors: true
+          integration: lambda
+          response:
+            headers:
+              Cache-Control: "'no-store,no-cache'"
+              ReferrerPolicy: "'origin'"
+              Strict-Transport-Security: "'max-age=31536000; includeSubDomains; preload'"
+  digestCanvaEmailSchedulerApi:
+    name: ${self:provider.stage}-${self:service}-api-email-scheduler
+    handler: api/email-scheduler/index.handler
+    description: Sends user digest email
+    timeout: 600
+    events:
+      - schedule:
+          rate: cron(0 0/1 * * ? *)
+  digestCanvaConfigurationStart:
+    name: ${self:provider.stage}-${self:service}-api-configuration-start
+    handler: api/configuration-start/index.handler
+    description: Canva configuration start
+    memorySize: 256
+    events:
+      - http:
+          path: /configuration/start
+          method: get
+          cors: true
+          integration: lambda-proxy
+  digestCanvaGetUser:
+    name: ${self:provider.stage}-${self:service}-api-get-user
+    handler: api/user/get/index.handler
+    description: Webhook digest
+    memorySize: 256
+    events:
+      - http:
+          path: /user
+          method: get
+          cors: true
+          integration: lambda
+          response:
+            headers:
+              Cache-Control: "'no-store,no-cache'"
+              ReferrerPolicy: "'origin'"
+              Strict-Transport-Security: "'max-age=31536000; includeSubDomains; preload'"
+  digestCanvaUpdateUserConfiguration:
+    name: ${self:provider.stage}-${self:service}-api-save-user
+    handler: api/user/save/index.handler
+    description: Webhook digest
+    memorySize: 256
+    events:
+      - http:
+          path: /user
+          method: post
+          cors: true
+          integration: lambda
+          response:
+            headers:
+              Cache-Control: "'no-store,no-cache'"
+              ReferrerPolicy: "'origin'"
+              Strict-Transport-Security: "'max-age=31536000; includeSubDomains; preload'"
+  digestCanvaConfigurationRedirect:
+    name: ${self:provider.stage}-${self:service}-api-configuration-redirect
+    handler: api/configuration-redirect/index.handler
+    description: Canva configuration redirect
+    memorySize: 256
+    events:
+      - http:
+          path: /configuration/redirect
+          method: get
+          cors: true
+          integration: lambda-proxy
+  digestCanvaAuth:
+    name: ${self:provider.stage}-${self:service}-api-auth
+    handler: api/auth/index.handler
+    description: Auth digest
+    memorySize: 256
+    events:
+      - http:
+          path: /auth
+          method: get
+          cors: true
+          integration: lambda-proxy
+resources:
+  Resources:
+    # DB
+    DigestCanvaAuth:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:provider.stage}_digest_canva_auth
+        DeletionProtectionEnabled: true
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true       
+        AttributeDefinitions:
+          - AttributeName: state
+            AttributeType: S
+        KeySchema:
+          - AttributeName: state
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    DigestCanvaUsers:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:provider.stage}_digest_canva_users
+        DeletionProtectionEnabled: true
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true       
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    DigestCanvaUsersMapping:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:provider.stage}_digest_canva_users_mapping
+        DeletionProtectionEnabled: true
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true       
+        AttributeDefinitions:
+          - AttributeName: addonUserId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: addonUserId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    DigestCanvaUserNotifications:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:provider.stage}_digest_canva_user_notifications
+        DeletionProtectionEnabled: true
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true       
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: notificationId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: notificationId
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+    # KMS
+    digestCanvaKey:
+      Type: AWS::KMS::Key
+      Properties:
+        Description: "Digest Canva Conector symmetric key for sensitive information"
+        Enabled: true
+        KeyPolicy:
+          Version: "2012-10-17"
+          Id: "key-default-1"
+          Statement:
+            - Sid: "Enable IAM User Permissions"
+              Effect: Allow
+              Principal:
+                AWS: "arn:aws:iam::${aws:accountId}:root"
+              Action: "kms:*"
+              Resource: "*"
+    digestCanvaAlias:
+      Type: AWS::KMS::Alias
+      Properties:
+        AliasName: "alias/${self:provider.stage}_digest-canva"
+        TargetKeyId: !Ref digestCanvaKey

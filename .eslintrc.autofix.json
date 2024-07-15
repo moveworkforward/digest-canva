@@ -1,0 +1,16 @@
+{
+    "extends": ".eslintrc.autofix-rules",
+    "env": {
+        "node": true,
+        "es6": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 9,
+        "sourceType": "script"
+    },
+    "overrides": [{
+        "files": ["**/*.ts", "**/*.tsx"],
+        "parser": "@typescript-eslint/parser",
+        "plugins": ["@typescript-eslint"]
+    }]
+}
