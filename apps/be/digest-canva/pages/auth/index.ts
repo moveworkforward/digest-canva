@@ -1,4 +1,4 @@
-import { generateAccessToken } from "../../shared/services/canva";
+import { register } from "../../shared/services/canva";
 import logger from "../../shared/logger";
 
 export const handler = async (event: any) => {
@@ -6,8 +6,12 @@ export const handler = async (event: any) => {
 
     const { code, state } = event.query;
     try {
-        const tokenResponse = await generateAccessToken(code, state);
-        logger.json("Token response", tokenResponse);
+        const user = await register(code, state);
+
+        if (!user) {
+            throw new Error("User not found");
+        }
+
         return `
             <!DOCTYPE html>
             <html>

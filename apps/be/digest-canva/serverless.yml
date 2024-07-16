@@ -96,23 +96,6 @@ package:
 
 functions:
   # api
-  digestCanvaAuth:
-    name: ${self:provider.stage}-${self:service}-auth
-    handler: api/auth/index.handler
-    description: Auth digest
-    memorySize: 256
-    events:
-      - http:
-          path: /auth
-          method: get
-          cors: true
-          integration: lambda
-          response:
-            headers:
-              Content-Type: "'text/html'"
-              Strict-Transport-Security: "'max-age=31536000; includeSubDomains; preload'"
-              Cache-Control: "'no-store,no-cache'"
-            template: $input.path('$')
   digestCanvaWebhook:
     name: ${self:provider.stage}-${self:service}-webhook
     handler: api/webhook/index.handler
@@ -129,6 +112,14 @@ functions:
               Cache-Control: "'no-store,no-cache'"
               ReferrerPolicy: "'origin'"
               Strict-Transport-Security: "'max-age=31536000; includeSubDomains; preload'"
+  digestCanvaEmailSchedulerApi:
+    name: ${self:provider.stage}-${self:service}-api-email-scheduler
+    handler: api/email-scheduler/index.handler
+    description: Sends user digest email
+    timeout: 600
+    events:
+      - schedule:
+          rate: cron(0 8 * * ? *)
   # pages
   digestCanvaMainPage:
     name: ${self:provider.stage}-${self:service}-page-main
@@ -138,6 +129,23 @@ functions:
     events:
       - http:
           path: /main-page
+          method: get
+          cors: true
+          integration: lambda
+          response:
+            headers:
+              Content-Type: "'text/html'"
+              Strict-Transport-Security: "'max-age=31536000; includeSubDomains; preload'"
+              Cache-Control: "'no-store,no-cache'"
+            template: $input.path('$')
+  digestCanvaAuth:
+    name: ${self:provider.stage}-${self:service}-page-auth
+    handler: pages/auth/index.handler
+    description: Auth digest
+    memorySize: 256
+    events:
+      - http:
+          path: /auth
           method: get
           cors: true
           integration: lambda
@@ -181,9 +189,32 @@ resources:
           AttributeName: ttl
           Enabled: true       
         AttributeDefinitions:
-          - AttributeName: email
+          - AttributeName: userId
             AttributeType: S
         KeySchema:
-          - AttributeName: email
+          - AttributeName: userId
             KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    DigestCanvaUserNotifications:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:provider.stage}_digest_canva_user_notifications
+        DeletionProtectionEnabled: true
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true       
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: N
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: createdAt
+            KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
