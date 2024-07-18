@@ -11,16 +11,23 @@ export namespace CanvaDigest {
     userId: string;
     email: string;
     displayName: string;
+    refreshToken: string;
   }
 
   export interface UserNotification {
     userId: string;
+    notificationId: string;
     createdAt: number;
-    designId: string;
+    designId?: string;
     type: Canva.NotificationType;
     data: string;
-  } 
+  }
 
+  export interface UserNotificationDate {
+    userId: string;
+    createdAt: number;
+    notificationId: string;
+  }
 }
 
 export namespace Canva {
@@ -30,10 +37,56 @@ export namespace Canva {
     content: NotificationContent;
   }
 
-  export type NotificationContent = CommentNotificationContent;
+  export type NotificationContent = DesignAccessRequestedNotificationContent | TeamInviteNotificationContent | DesignApprovalRequestedNotificationContent | DesignApprovalResponseNotificationContent | CommentNotificationContent | ShareDesignNotificationContent;
 
   export enum NotificationType {
+    DesignAccessRequested = "design_access_requested",
+    TeamInvite = "team_invite",
+    DesignApprovalRequested = "design_approval_requested",
+    DesignApprovalResponse = "design_approval_response",
     Comment = "comment",
+    ShareDesign = "share_design",
+  }
+
+  export interface DesignAccessRequestedNotificationContent {
+    type: NotificationType.DesignAccessRequested;
+    triggering_user: User;
+    receiving_team_user: TeamUser;
+    design: DesignSummary;
+  }
+
+  export interface TeamInviteNotificationContent {
+    type: NotificationType.TeamInvite;
+    triggering_user: User;
+    receiving_team_user: TeamUser;
+    design: null;
+    inviting_team: {
+      id: string;
+      display_name: string;
+      external: boolean;
+    }
+  }
+
+  export interface DesignApprovalRequestedNotificationContent {
+    type: NotificationType.DesignApprovalRequested;
+    triggering_user: User;
+    receiving_team_user: TeamUser;
+    design: DesignSummary;
+    approval_request?: {
+      message?: string;
+    }
+  }
+
+  export interface DesignApprovalResponseNotificationContent {
+    type: NotificationType.DesignApprovalResponse;
+    triggering_user: User;
+    receiving_team_user: TeamUser;
+    design: DesignSummary;
+    approval_response?: {
+      approved: boolean;
+      message?: string;
+      ready_to_publish?: boolean;
+    }
   }
 
   export interface CommentNotificationContent {
@@ -42,6 +95,14 @@ export namespace Canva {
     receiving_team_user: TeamUser;
     design: DesignSummary;
     comment: CommentEvent;
+  }
+
+  export interface ShareDesignNotificationContent {
+    type: NotificationType.ShareDesign;
+    triggering_user: User;
+    receiving_team_user: TeamUser;
+    design: DesignSummary;
+    share?: { message?: string };
   }
 
   export interface User {
@@ -66,6 +127,20 @@ export namespace Canva {
     }
   }
 
+  export interface Design {
+    id: string;
+    title: string;
+    urls: {
+      edit_url: string;
+      view_url: string;
+    };
+    thumbnail?: {
+      width: number;
+      height: number;
+      url: string;
+    }
+  }
+
   export enum CommentEventType {
     Comment = "COMMENT",
     Reply = "REPLY",
@@ -83,7 +158,7 @@ export namespace Canva {
     Parent = "PARENT",
     Reply = "REPLY",
   }
-  
+
   export interface CommentData {
     type: CommentType;
     id?: string;
@@ -97,13 +172,13 @@ export namespace Canva {
     resolver?: User;
     thread_id?: string;
   }
-  
+
   interface CommentObject {
     type: string; // DESIGN
     design_id?: string;
   }
-  
-  interface Mention {
+
+  export interface Mention {
     user_id?: string;
     team_id?: string;
     display_name?: string;

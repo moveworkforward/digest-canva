@@ -14,7 +14,12 @@ export const handler = async (event: any) => {
     let userNotification: CanvaDigest.UserNotification | null = null;
 
     switch (webhookNotification.content.type) {
+    case Canva.NotificationType.DesignAccessRequested:
+    case Canva.NotificationType.TeamInvite:
+    case Canva.NotificationType.DesignApprovalRequested:
+    case Canva.NotificationType.DesignApprovalResponse:
     case Canva.NotificationType.Comment:
+    case Canva.NotificationType.ShareDesign:
         const { content, created_at } = webhookNotification;
         const userId = content.receiving_team_user.user_id;
         if (!userId) {
@@ -28,9 +33,10 @@ export const handler = async (event: any) => {
         }
         userNotification = {
             userId: digetsUser.userId,
+            notificationId: webhookNotification.id,
             createdAt: created_at,
-            designId: content.design.id!,
-            type: Canva.NotificationType.Comment,
+            designId: content.design?.id,
+            type: webhookNotification.content.type,
             data: JSON.stringify(content),
         };
         

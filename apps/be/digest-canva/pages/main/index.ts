@@ -3,7 +3,7 @@ import * as handlebars from "handlebars";
 import { getResources } from "../resources";
 import { StageType } from "../../shared/consts";
 import { logger } from "../../shared/logger";
-import { generateLoginUrl } from "../../shared/services/canva";
+import { CanvaClient } from "../../shared/services/canva";
 
 const compiledTemplate = handlebars.compile(baseTemplate());
 
@@ -14,7 +14,7 @@ export const handler = async (event: any) => {
     logger.json("Main page event", event);
 
     const scriptUrls = getResources(stage, domain);
-    const loginUrl = await generateLoginUrl();
+    const loginUrl = await CanvaClient.generateLoginUrl();
 
     return compiledTemplate({ scriptUrls, loginUrl });
 };

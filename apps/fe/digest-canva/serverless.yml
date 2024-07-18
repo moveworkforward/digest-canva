@@ -36,6 +36,11 @@ custom:
       bucketPrefix: js/
       deleteRemoved: true
       acl: public-read
+    - bucketName: ${self:custom.frontendBucketName}
+      bucketPrefix: assets/
+      localDir: ./build/assets
+      deleteRemoved: true
+      acl: public-read
 
 resources:
   Resources:

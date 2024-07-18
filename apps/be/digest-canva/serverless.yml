@@ -53,6 +53,8 @@ provider:
         - Effect: Allow
           Action:
             - kms:Decrypt
+            - kms:Encrypt
+            - kms:GenerateDataKey
           Resource: "arn:aws:kms:${self:provider.region}:${aws:accountId}:key/*"
         - Effect: Allow
           Action:
@@ -157,6 +159,7 @@ functions:
             template: $input.path('$')
 resources:
   Resources:
+    # DB
     DigestCanvaAuth:
       Type: AWS::DynamoDB::Table
       DeletionPolicy: Retain
@@ -210,11 +213,32 @@ resources:
         AttributeDefinitions:
           - AttributeName: userId
             AttributeType: S
-          - AttributeName: createdAt
-            AttributeType: N
+          - AttributeName: notificationId
+            AttributeType: S
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
-          - AttributeName: createdAt
+          - AttributeName: notificationId
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
+    # KMS
+    digestCanvaKey:
+      Type: AWS::KMS::Key
+      Properties:
+        Description: "Digest Canva Conector symmetric key for sensitive information"
+        Enabled: true
+        KeyPolicy:
+          Version: "2012-10-17"
+          Id: "key-default-1"
+          Statement:
+            - Sid: "Enable IAM User Permissions"
+              Effect: Allow
+              Principal:
+                AWS: "arn:aws:iam::${aws:accountId}:root"
+              Action: "kms:*"
+              Resource: "*"
+    digestCanvaAlias:
+      Type: AWS::KMS::Alias
+      Properties:
+        AliasName: "alias/${self:provider.stage}_digest-canva"
+        TargetKeyId: !Ref digestCanvaKey
