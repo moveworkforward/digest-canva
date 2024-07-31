@@ -122,6 +122,71 @@ functions:
     events:
       - schedule:
           rate: cron(0 8 * * ? *)
+  digestCanvaConfigurationStart:
+    name: ${self:provider.stage}-${self:service}-api-configuration-start
+    handler: api/configuration-start/index.handler
+    description: Canva configuration start
+    memorySize: 256
+    events:
+      - http:
+          path: /configuration/start
+          method: get
+          cors: true
+          integration: lambda-proxy
+  digestCanvaGetUser:
+    name: ${self:provider.stage}-${self:service}-api-get-user
+    handler: api/user/get/index.handler
+    description: Webhook digest
+    memorySize: 256
+    events:
+      - http:
+          path: /user
+          method: get
+          cors: true
+          integration: lambda
+          response:
+            headers:
+              Cache-Control: "'no-store,no-cache'"
+              ReferrerPolicy: "'origin'"
+              Strict-Transport-Security: "'max-age=31536000; includeSubDomains; preload'"
+  digestCanvaUpdateUserConfiguration:
+    name: ${self:provider.stage}-${self:service}-api-save-user
+    handler: api/user/save/index.handler
+    description: Webhook digest
+    memorySize: 256
+    events:
+      - http:
+          path: /user
+          method: post
+          cors: true
+          integration: lambda
+          response:
+            headers:
+              Cache-Control: "'no-store,no-cache'"
+              ReferrerPolicy: "'origin'"
+              Strict-Transport-Security: "'max-age=31536000; includeSubDomains; preload'"
+  digestCanvaConfigurationRedirect:
+    name: ${self:provider.stage}-${self:service}-api-configuration-redirect
+    handler: api/configuration-redirect/index.handler
+    description: Canva configuration redirect
+    memorySize: 256
+    events:
+      - http:
+          path: /configuration/redirect
+          method: get
+          cors: true
+          integration: lambda-proxy
+  digestCanvaAuth:
+    name: ${self:provider.stage}-${self:service}-api-auth
+    handler: api/auth/index.handler
+    description: Auth digest
+    memorySize: 256
+    events:
+      - http:
+          path: /auth
+          method: get
+          cors: true
+          integration: lambda-proxy
   # pages
   digestCanvaMainPage:
     name: ${self:provider.stage}-${self:service}-page-main
@@ -131,23 +196,6 @@ functions:
     events:
       - http:
           path: /main-page
-          method: get
-          cors: true
-          integration: lambda
-          response:
-            headers:
-              Content-Type: "'text/html'"
-              Strict-Transport-Security: "'max-age=31536000; includeSubDomains; preload'"
-              Cache-Control: "'no-store,no-cache'"
-            template: $input.path('$')
-  digestCanvaAuth:
-    name: ${self:provider.stage}-${self:service}-page-auth
-    handler: pages/auth/index.handler
-    description: Auth digest
-    memorySize: 256
-    events:
-      - http:
-          path: /auth
           method: get
           cors: true
           integration: lambda
@@ -196,6 +244,25 @@ resources:
             AttributeType: S
         KeySchema:
           - AttributeName: userId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    DigestCanvaUsersMapping:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:provider.stage}_digest_canva_users_mapping
+        DeletionProtectionEnabled: true
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true       
+        AttributeDefinitions:
+          - AttributeName: addonUserId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: addonUserId
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
     DigestCanvaUserNotifications:

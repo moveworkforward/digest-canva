@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "react-scripts start",
     "serve": "serve -s build",
     "lint:fix": "npm run lint -- --fix",
     "tsc": "tsc -noEmit"
@@ -16,6 +17,9 @@
     "ts-node": "^10.9.2"
   },
   "dependencies": {
+    "@canva/app-ui-kit": "^3.7.0",
+    "@canva/platform": "^1.1.0",
+    "@canva/user": "^1.0.0",
     "axios": "^1.7.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

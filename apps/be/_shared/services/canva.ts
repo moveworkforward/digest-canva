@@ -14,20 +14,18 @@ const CANVA_CLIENT_SECRET = "cnvcaJG1XePEUUDXa5Tu-5HzUhejuUUwejkJOpeb21UKy_6wd48
 
 export class CanvaClient {
     private _accessToken: string;
-    private _refreshToken: string;
     private _userId: string;
 
-    constructor(user: CanvaDigest.CanvaUser) {
-        this._refreshToken = user.refreshToken;
-        this._userId = user.userId;
+    constructor(userId: string) {
+        this._userId = userId;
     }
 
-    public static async generateLoginUrl() {
+    public static async generateLoginUrl(params: { addonUserId: string; nonce: string; addonState: string }) {
         const state = crypto.randomBytes(16).toString("base64url");
         const codeVerifier = crypto.randomBytes(96).toString("base64url");
         const ttl = Math.floor(Date.now() / 1000) + 3600; // 1 hour
 
-        await digestCanvaRepository.createCanvaAuth({ state, codeVerifier, ttl });
+        await digestCanvaRepository.createCanvaAuth({ state, codeVerifier, ttl, ...params });
 
         const scopes = encodeURIComponent([
             "profile:read",
@@ -40,13 +38,12 @@ export class CanvaClient {
         return `https://www.canva.com/api/oauth/authorize?code_challenge_method=s256&response_type=code&client_id=${CANVA_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${scopes}&code_challenge=${codeChallenge}&state=${state}`;
     }
 
-    public static async register(code: string, stateWithEmail: string) {
-        const { state, email } = JSON.parse(stateWithEmail);
-
+    public static async register(code: string, state: string) {
         const canvaAuth = await digestCanvaRepository.getCanvaAuth(state);
         if (!canvaAuth) {
             throw new Error("Canva auth not found");
         }
+        
         const tokenResponse = await axios.post("https://api.canva.com/rest/v1/oauth/token", {
             client_id: CANVA_CLIENT_ID,
             client_secret: CANVA_CLIENT_SECRET,
@@ -81,9 +78,11 @@ export class CanvaClient {
 
         const displayName = userProfileResponse?.data?.profile?.display_name;
 
-        const user = await digestCanvaRepository.createCanvaUser({ userId, email, displayName, refreshToken });
+        const user = await digestCanvaRepository.createCanvaUser({ userId, displayName, refreshToken });
+        
+        const userMapping = await digestCanvaRepository.createCanvaAddonUserMapping({ addonUserId: canvaAuth.addonUserId, connectUserId: userId });
 
-        return user;
+        return canvaAuth;
     }
 
     public async getDesign(designId: string): Promise<Canva.Design> {
@@ -91,19 +90,31 @@ export class CanvaClient {
         return res?.data?.design;
     }
 
-    public async refreshToken() {
-        const tokenResponse = await axios.post("https://api.canva.com/rest/v1/oauth/token", {
-            client_id: CANVA_CLIENT_ID,
-            client_secret: CANVA_CLIENT_SECRET,
-            refresh_token: this._refreshToken,
-            grant_type: "refresh_token",
-        }, { headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-        } });
+    public async getDesigns(): Promise<Canva.Design[]> {
+        const res = await this.makeCall("https://www.canva.dev/_api/rest/v1/designs") as unknown as { data: { items: Canva.Design[] } };
+        return res?.data?.items;
+    }
 
-        this._accessToken = tokenResponse?.data?.access_token;
-        this._refreshToken = tokenResponse?.data?.refresh_token;
-        await digestCanvaRepository.updateCanvaUserRefreshToken(this._userId, this._refreshToken);
+    public async refreshToken() {
+        try {
+            const user = await digestCanvaRepository.getCanvaUser(this._userId);
+
+            const tokenResponse = await axios.post("https://api.canva.com/rest/v1/oauth/token", {
+                client_id: CANVA_CLIENT_ID,
+                client_secret: CANVA_CLIENT_SECRET,
+                refresh_token: user.refreshToken,
+                grant_type: "refresh_token",
+            }, { headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            } });
+
+            this._accessToken = tokenResponse?.data?.access_token;
+            await digestCanvaRepository.updateCanvaUserRefreshToken(this._userId, tokenResponse?.data?.refresh_token);
+        } catch (e) {
+            logger.error("Failed to refresh token", e);
+            await digestCanvaRepository.updateCanvaUserRefreshToken(this._userId, "");
+        }
+
     }
 
     private async makeCall(url: string) {

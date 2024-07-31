@@ -4,14 +4,44 @@ export namespace CanvaDigest {
   export interface CanvaAuth {
     state: string;
     codeVerifier: string;
+    addonUserId: string;
+    nonce: string;
+    addonState: string;
     ttl: number;
   }
 
   export interface CanvaUser {
     userId: string;
-    email: string;
     displayName: string;
     refreshToken: string;
+    configuration?: EmailConfiguration;
+  }
+
+  export interface CanvaUsersMapping {
+    addonUserId: string;
+    connectUserId: string;
+  }
+
+  export interface EmailConfiguration {
+    email: string;
+    time: number;
+    repetition: EmailRepetition;
+    timezone: number;
+    sections: EmailSection[];
+  }
+
+
+  export enum EmailRepetition {
+      Daily = "daily",
+      Weekly = "weekly",
+      BiWeekly = "bi-weekly",
+  }
+
+  export enum EmailSection {
+    Access = "access",
+    Reviews = "reviews",
+    Comments = "comments",
+    Shares = "shares",
   }
 
   export interface UserNotification {

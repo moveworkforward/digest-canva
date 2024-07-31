@@ -20,7 +20,7 @@ export function getResources(stage: StageType, domain: string): string[] {
             `https://s3.amazonaws.com/fe-digest-canva.${domain}/js/main.b3b34ead.js`,
         ],
         personal: [
-            `https://s3.amazonaws.com/fe-digest-canva.${domain}/js/main.2b121174.js`,
+            `https://s3.amazonaws.com/fe-digest-canva.${domain}/js/main.b89d20eb.js`,
         ],
         local: [],
     };
