@@ -19,12 +19,12 @@ const SECTION_LABELS: Record<EmailSection, string> = {
     [EmailSection.Shares]: "Sharings",
 };
 
-const SECTION_DESCRIPTIONS: Record<EmailSection, string> = {
+/*const SECTION_DESCRIPTIONS: Record<EmailSection, string> = {
     [EmailSection.Access]: "When someone requests access to your design or invites you to a team",
     [EmailSection.Reviews]: "When someone requests your approval or reviews your design",
     [EmailSection.Comments]: "When someone comments on your design or replies to your comments",
     [EmailSection.Shares]: "When someone shares design with you",
-};
+};*/
 
 export const Configuration = () => {
     const [isInitialized, setIsInitialized] = useState(false);
@@ -60,12 +60,17 @@ export const Configuration = () => {
 
     const getSectionValue = (section: EmailSection) => configuration.sections.includes(section);
     const onSectionChange = (section: EmailSection) => (value: boolean) => {
-        setConfiguration((prev) => ({
-            ...prev,
-            sections: value
-                ? [...prev.sections, section]
-                : prev.sections.filter((s) => s !== section),
-        }));
+        setConfiguration((prev) => {
+            let newSections = prev.sections;
+            if (!value) {
+                newSections = newSections.filter((s) => s !== section);
+            } else {
+                newSections = [...newSections, section];
+                newSections = Object.keys(SECTION_LABELS).filter((s) => newSections.includes(s as EmailSection)) as EmailSection[];
+            }
+            
+            return { ...prev, sections: newSections };
+        });  
     };
 
     const onClick = async () => {

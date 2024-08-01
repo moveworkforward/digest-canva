@@ -26,7 +26,7 @@ export namespace CanvaDigest {
     email: string;
     time: number;
     repetition: EmailRepetition;
-    timezone: number;
+    timezone: string;
     sections: EmailSection[];
   }
 
@@ -138,6 +138,9 @@ export namespace Canva {
   export interface User {
     id: string;
     display_name?: string;
+    thumbnail?: {
+      url: string;
+    }
   }
 
   export interface TeamUser {

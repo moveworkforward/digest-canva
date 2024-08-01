@@ -138,7 +138,7 @@ export interface DigestCanvaRepositoryType {
     getCanvaAddonUserMapping: (addonUserId: string) => Promise<CanvaDigest.CanvaUsersMapping>;
     createCanvaAddonUserMapping: (config: CanvaDigest.CanvaUsersMapping) => Promise<CanvaDigest.CanvaUsersMapping>;
     createCanvaUserNotification: (config: CanvaDigest.UserNotification) => Promise<CanvaDigest.UserNotification>;
-    getCanvaUserNotifications: (userId: string) => Promise<CanvaDigest.UserNotification[]>;
+    getCanvaUserNotifications: (userId: string, repetition: CanvaDigest.EmailRepetition) => Promise<CanvaDigest.UserNotification[]>;
 }
 
 export class DigestCanvaRepository implements DigestCanvaRepositoryType {
@@ -218,11 +218,26 @@ export class DigestCanvaRepository implements DigestCanvaRepositoryType {
         return this._canvaUserNotificationDbInstance.create(config);
     }
 
-    // TODO: add pagination, time period, index for createdAt, ttl (auto delete)
-    public async getCanvaUserNotifications(userId: string): Promise<CanvaDigest.UserNotification[]> {
-        // get notifications for a user created in the last 24 hours
+    // TODO: add pagination, index for createdAt, ttl (auto delete)
+    public async getCanvaUserNotifications(userId: string, repetition: CanvaDigest.EmailRepetition): Promise<CanvaDigest.UserNotification[]> {
         const last24Hours = Date.now() - 24 * 60 * 60 * 1000;
-        const result = await this._canvaUserNotificationDbInstance.query("userId").eq(userId).where("createdAt").gt(last24Hours).exec();
+        let date;
+        switch (repetition) {
+        case CanvaDigest.EmailRepetition.Daily:
+            date = last24Hours;
+            break;
+        case CanvaDigest.EmailRepetition.Weekly:
+            date = Date.now() - 7 * last24Hours;
+            break;
+        case CanvaDigest.EmailRepetition.BiWeekly:
+            date = Date.now() - 14 * last24Hours;
+            break;
+        default:
+            date = last24Hours;
+            break;
+        }
+
+        const result = await this._canvaUserNotificationDbInstance.query("userId").eq(userId).where("createdAt").gt(date).exec();
         return result;
     }
 

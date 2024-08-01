@@ -2,7 +2,6 @@ import { sendUserDigest } from "../../../shared/services/user-digest";
 import logger from "../../../shared/logger";
 import { DigestCanvaRepository } from "../../../shared/repository/digest-canva";
 import { verifyJwt } from "../../../shared/services/jwt-verifier";
-import { CanvaClient } from "../../../shared/services/canva";
 import { getDemoNotifications } from "./demo-notifications";
 import { StageType } from "../../../shared/consts";
 
@@ -26,13 +25,9 @@ export const handler = async (event: any) => {
             throw new Error("User not found");
         }
 
-        const canvaClient = new CanvaClient(user.userId);
-        await canvaClient.refreshToken();
-        const designs = await canvaClient.getDesigns();
+        const notifications = getDemoNotifications(user);
 
-        const notifications = getDemoNotifications(user, designs);
-
-        await sendUserDigest(user, notifications);
+        await sendUserDigest(user, notifications, true);
 
         return { ...user, refreshToken: "****" };
     } catch (error) {
